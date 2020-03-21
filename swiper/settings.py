@@ -37,6 +37,7 @@ INSTALLED_APPS = [
 
     # 自定义模型
     'user',
+    'social',
 ]
 
 MIDDLEWARE = [
