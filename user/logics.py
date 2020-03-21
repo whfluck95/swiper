@@ -1,4 +1,5 @@
 import random
+import os
 
 import requests
 from django.core.cache import cache
@@ -74,3 +75,18 @@ def save_upload_avatar(user, upload_avatar):
             fp.write(chunk)
 
     return filename, filepath
+
+def handle_avatar(user,upload_avatar):
+    """处理个人头像"""
+    #将文件保存到本地
+    filename,filepath = save_upload_avatar(user,upload_avatar)
+
+    #将文件上传到七牛
+    avatar_url = upload_avatar(filename,filepath)
+
+    #保存avatar_url
+    user.avatar = avatar_url
+    user.save()
+
+    #删除本地临时文件
+    os.remove(filepath)

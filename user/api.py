@@ -1,5 +1,3 @@
-import os
-
 from django.shortcuts import redirect
 from django.core.cache import cache
 
@@ -109,17 +107,6 @@ def upload_avatar(request):
     '''上传个人形象'''
     avatar = request.FILES.get('avatar')
 
-    # 将文件保存到本地
-    filename, filepath = logics.save_upload_avatar(request.user, avatar)
-
-    # 将文件上传到七牛
-    avatar_url = upload_to_qn(filename, filepath)
-
-    # 保存 avatar_url
-    request.user.avatar = avatar_url
-    request.user.save()
-
-    # 删除本地临时文件
-    os.remove(filepath)
+    logics.handle_avatar(request.user,avatar)
 
     return render_json()
