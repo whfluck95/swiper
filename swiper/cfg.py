@@ -2,6 +2,16 @@
 
 from urllib.parse import urlencode
 
+# Redis 相关配置
+REDIS = {
+    'host': 'localhost',
+    'port': 6379,
+    'db': 3
+}
+# 反悔相关配置
+DAILY_REWIND = 3  # 每日反悔次数
+REWIND_TIMEOUT = 5 * 60  # 可反悔的滑动记录的秒数
+
 # 七牛云配置
 QN_ACCESS_KEY = 'kEM0sRR-meB92XU43_a6xZqhiyyTuu5yreGCbFtw'
 QN_SECRET_KEY = 'QxTKqgnOb_UVldphU261qu9IdzmjkgGHh6GQVPPy'
