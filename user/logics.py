@@ -1,11 +1,16 @@
-import random
 import os
+import random
+import logging
 
 import requests
 from django.core.cache import cache
 
 from swiper import cfg
 from common import keys
+from libs.qn_cloud import upload_to_qn
+from tasks import celery_app
+
+inf_log = logging.getLogger('inf')
 
 
 def gen_randcode(length: int) -> str:
@@ -17,7 +22,7 @@ def gen_randcode(length: int) -> str:
 def send_vcode(phone):
     vcode = gen_randcode(6)
     cache.set(keys.VCODE_KEY % phone, vcode, 180)  # 将验证码保存到缓存中, 并设置过期时间
-    print('验证码:', vcode)
+    inf_log.info('验证码: %s' % vcode)
 
     sms_args = cfg.YZX_ARGS.copy()
     sms_args['mobile'] = phone
@@ -76,17 +81,19 @@ def save_upload_avatar(user, upload_avatar):
 
     return filename, filepath
 
-def handle_avatar(user,upload_avatar):
-    """处理个人头像"""
-    #将文件保存到本地
-    filename,filepath = save_upload_avatar(user,upload_avatar)
 
-    #将文件上传到七牛
-    avatar_url = upload_avatar(filename,filepath)
+@celery_app.task
+def handle_avatar(user, upload_avatar):
+    '''处理个人头像'''
+    # 将文件保存到本地
+    filename, filepath = save_upload_avatar(user, upload_avatar)
 
-    #保存avatar_url
+    # 将文件上传到七牛
+    avatar_url = upload_to_qn(filename, filepath)
+
+    # 保存 avatar_url
     user.avatar = avatar_url
     user.save()
 
-    #删除本地临时文件
+    # 删除本地临时文件
     os.remove(filepath)

@@ -1,3 +1,5 @@
+import logging
+
 from django.shortcuts import redirect
 from django.core.cache import cache
 
@@ -7,8 +9,10 @@ from swiper import cfg
 from user import logics
 from user.models import User
 from user.forms import UserForm, ProfileForm
+from libs.cache import rds
 from libs.http import render_json
-from libs.qn_cloud import upload_to_qn
+
+inf_log = logging.getLogger('inf')
 
 
 def get_vcode(request):
@@ -19,7 +23,7 @@ def get_vcode(request):
     if logics.send_vcode(phonenum):
         return render_json()
     else:
-        return render_json(code=stat.VCODE_ERR)
+        raise stat.VcodeErr
 
 
 def check_vcode(request):
@@ -38,10 +42,11 @@ def check_vcode(request):
                 phonenum=phonenum,
                 nickname=phonenum
             )
+        inf_log.info('User(%s) login in' % user.id)
         request.session['uid'] = user.id
-        return render_json(user.to_dict())
+        return render_json(user.to_dict('vip_id', 'vip_expired'))
     else:
-        return render_json(code=stat.INVILD_VCODE)
+        raise stat.InvildVcode
 
 
 def wb_auth(request):
@@ -55,12 +60,12 @@ def wb_callback(request):
     # 获取授权令牌
     access_token, wb_uid = logics.get_access_token(code)
     if not access_token:
-        return render_json(code=stat.ACCESS_TOKEN_ERR)
+        raise stat.AccessTokenErr
 
     # 获取用户信息
     user_info = logics.get_user_info(access_token, wb_uid)
     if not user_info:
-        return render_json(code=stat.USER_INFO_ERR)
+        raise stat.UserInfoErr
 
     # 执行登陆或者注册
     try:
@@ -70,12 +75,20 @@ def wb_callback(request):
         user = User.objects.create(**user_info)
 
     request.session['uid'] = user.id
-    return render_json(user.to_dict())
+    return render_json(user.to_dict('vip_id', 'vip_expired'))
 
 
 def get_profile(request):
     '''获取个人资料'''
-    profile_data = request.user.profile.to_dict()
+    key = keys.PROFILE_KEY % request.user.id
+    profile_data = rds.get(key)
+    print('先从Redis缓存获取数据: %s' % profile_data)
+
+    if profile_data is None:
+        profile_data = request.user.profile.to_dict()
+        print('缓存中没有，从数据库获取: %s' % profile_data)
+        rds.set(key, profile_data)
+        print('将取出的数据添加到缓存')
     return render_json(profile_data)
 
 
@@ -86,10 +99,10 @@ def set_profile(request):
 
     # 检查 User 的数据
     if not user_form.is_valid():
-        return render_json(user_form.errors, code=stat.USER_DATA_ERRR)
+        raise stat.UserDataErrr(user_form.errors)
     # 检查 Profile 的数据
     if not profile_form.is_valid():
-        return render_json(profile_form.errors, code=stat.PROFILE_DATA_ERRR)
+        raise stat.ProfileDataErrr(profile_form.errors)
 
     user = request.user
     # 保存用户的数据
@@ -100,6 +113,10 @@ def set_profile(request):
     user.profile.__dict__.update(profile_form.cleaned_data)
     user.profile.save()
 
+    # 修改缓存
+    key = keys.PROFILE_KEY % request.user.id
+    rds.set(key, user.profile.to_dict())
+
     return render_json()
 
 
@@ -107,6 +124,6 @@ def upload_avatar(request):
     '''上传个人形象'''
     avatar = request.FILES.get('avatar')
 
-    logics.handle_avatar(request.user,avatar)
+    logics.handle_avatar.delay(request.user, avatar)
 
     return render_json()

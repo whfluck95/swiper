@@ -69,3 +69,4 @@ class Friend(models.Model):
     def break_off(cls, uid, sid):
         '''断绝好友关系'''
         uid1, uid2 = (sid, uid) if uid > sid else (uid, sid)
+        cls.objects.filter(uid1=uid1, uid2=uid2).delete()

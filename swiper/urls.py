@@ -16,7 +16,8 @@ Including another URLconf
 from django.conf.urls import url
 
 from user import api as user_api
-from social import api as socail_api
+from social import api as social_api
+
 urlpatterns = [
     url(r'^api/user/get_vcode', user_api.get_vcode),
     url(r'^api/user/check_vcode', user_api.check_vcode),
@@ -27,11 +28,12 @@ urlpatterns = [
     url(r'^weibo/wb_auth', user_api.wb_auth),
     url(r'^weibo/callback', user_api.wb_callback),
 
-    url(r'^api/social/get_rcmd_users',socail_api.get_rcmd_users),
-    url(r'^api/social/like',socail_api.like),
-    url(r'^api/social/superlike',socail_api.superlike),
-    url(r'^api/social/dislike',socail_api.dislike),
-    url(r'^api/social/rewind',socail_api.rewind),
-    url(r'^api/social/who_liked_me',socail_api.who_liked_me),
-    url(r'^api/social/friend_list',socail_api.friend_list),
+    url(r'^api/social/get_rcmd_users', social_api.get_rcmd_users),
+    url(r'^api/social/like', social_api.like),
+    url(r'^api/social/superlike', social_api.superlike),
+    url(r'^api/social/dislike', social_api.dislike),
+    url(r'^api/social/rewind', social_api.rewind),
+    url(r'^api/social/who_liked_me', social_api.show_liked_me),
+    url(r'^api/social/friend_list', social_api.friend_list),
+    url(r'^api/social/hot_rank', social_api.hot_rank),
 ]

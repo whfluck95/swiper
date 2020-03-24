@@ -1,5 +1,7 @@
 from django.db import models
 
+from vip.models import Vip
+
 
 class User(models.Model):
     SEX = (
@@ -23,22 +25,20 @@ class User(models.Model):
     avatar = models.CharField(max_length=256, verbose_name='个人形象')
     location = models.CharField(max_length=20, choices=LOCATION, verbose_name='常居地')
 
+    vip_id = models.IntegerField(default=1, verbose_name='用户对应的VIP')
+    vip_expired = models.DateTimeField(default='2000-1-1', verbose_name='会员过期时间')
+
     @property
     def profile(self):
         if not hasattr(self, '_profile'):
             self._profile, _ = Profile.objects.get_or_create(id=self.id)
         return self._profile
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'phonenum': self.phonenum,
-            'nickname': self.nickname,
-            'sex': self.sex,
-            'birthday': str(self.birthday),
-            'avatar': self.avatar,
-            'location': self.location,
-        }
+    @property
+    def vip(self):
+        if not hasattr(self, '_vip'):
+            self._vip = Vip.objects.get(id=self.vip_id)
+        return self._vip
 
 
 class Profile(models.Model):
@@ -53,17 +53,3 @@ class Profile(models.Model):
     vibration = models.BooleanField(default=True, verbose_name='开启震动')
     only_matched = models.BooleanField(default=True, verbose_name='只让匹配的人看我的相册')
     auto_play = models.BooleanField(default=True, verbose_name='自动播放视频')
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'dating_sex': self.dating_sex,
-            'dating_location': self.dating_location,
-            'min_dating_age': self.min_dating_age,
-            'max_dating_age': self.max_dating_age,
-            'min_distance': self.min_distance,
-            'max_distance': self.max_distance,
-            'vibration': self.vibration,
-            'only_matched': self.only_matched,
-            'auto_play': self.auto_play,
-        }

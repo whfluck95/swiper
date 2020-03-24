@@ -3,7 +3,7 @@ from social import logics
 from social.models import Swiped
 from social.models import Friend
 from user.models import User
-
+from vip.logics import need_permission
 
 
 def get_rcmd_users(request):
@@ -21,7 +21,7 @@ def like(request):
     return render_json({'matched': is_matched})
 
 
-
+@need_permission
 def superlike(request):
     '''上滑-超级喜欢'''
     sid = int(request.POST.get('sid'))
@@ -38,7 +38,7 @@ def dislike(request):
     return render_json()
 
 
-
+@need_permission
 def rewind(request):
     '''
     反悔
@@ -53,7 +53,7 @@ def rewind(request):
     return render_json()
 
 
-
+@need_permission
 def show_liked_me(request):
     '''查看谁喜欢过我'''
     user_id_list = Swiped.who_liked_me(request.user.id)
@@ -66,6 +66,11 @@ def friend_list(request):
     '''好友列表'''
     friend_id_list = Friend.friend_ids(request.user.id)
     users = User.objects.filter(id__in=friend_id_list)
+    result = [user.to_dict('vip_id', 'vip_expired') for user in users]
+    return render_json(result)
 
-    return render_json()
 
+def hot_rank(request):
+    '''用户积分排行榜'''
+    rank_data = logics.top_n(50)
+    return render_json(rank_data)

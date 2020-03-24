@@ -8,9 +8,20 @@ REDIS = {
     'port': 6379,
     'db': 3
 }
+
+
+# 滑动积分配置
+SWIPE_SCORE = {
+    'like': 5,
+    'superlike': 7,
+    'dislike': -5
+}
+
+
 # 反悔相关配置
 DAILY_REWIND = 3  # 每日反悔次数
 REWIND_TIMEOUT = 5 * 60  # 可反悔的滑动记录的秒数
+
 
 # 七牛云配置
 QN_ACCESS_KEY = 'kEM0sRR-meB92XU43_a6xZqhiyyTuu5yreGCbFtw'
